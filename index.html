@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to right, #1e3c72, #2a5298);
+            color: white;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .question {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        button {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            background: #ff9800;
+            color: white;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #e68900;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .score {
+            font-size: 20px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Quiz App</h1>
+        <div class="question" id="question">Loading...</div>
+        <div class="options" id="options"></div>
+        <div class="result" id="result"></div>
+        <div class="score" id="score"></div>
+    </div>
+
+    <script>
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let questions = [];
+
+        async function fetchQuestions() {
+            try {
+                const response = await fetch("https://opentdb.com/api.php?amount=10&type=multiple");
+                const data = await response.json();
+                questions = data.results.map(q => ({
+                    question: q.question,
+                    options: [...q.incorrect_answers, q.correct_answer].sort(() => Math.random() - 0.5),
+                    answer: q.correct_answer
+                }));
+                loadQuestion();
+            } catch (error) {
+                document.getElementById("question").textContent = "Failed to load questions. Try again later.";
+            }
+        }
+
+        function loadQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                showFinalScore();
+                return;
+            }
+
+            const quiz = questions[currentQuestionIndex];
+            document.getElementById("question").innerHTML = quiz.question;
+            const optionsDiv = document.getElementById("options");
+            optionsDiv.innerHTML = "";
+            quiz.options.forEach(option => {
+                const button = document.createElement("button");
+                button.textContent = option;
+                button.onclick = () => checkAnswer(option);
+                optionsDiv.appendChild(button);
+            });
+        }
+
+        function checkAnswer(selected) {
+            const quiz = questions[currentQuestionIndex];
+            const resultDiv = document.getElementById("result");
+            if (selected === quiz.answer) {
+                resultDiv.textContent = "Correct! ✅";
+                resultDiv.style.color = "lightgreen";
+                score++;
+            } else {
+                resultDiv.textContent = "Wrong! ❌ The correct answer is: " + quiz.answer;
+                resultDiv.style.color = "red";
+            }
+            currentQuestionIndex++;
+            setTimeout(loadQuestion, 2000);
+        }
+
+        function showFinalScore() {
+            document.getElementById("question").textContent = "Quiz Over!";
+            document.getElementById("options").innerHTML = "";
+            document.getElementById("result").textContent = "Your Score: " + score + " / 10";
+            
+            let message = "";
+            if (score === 10) {
+                message = "Outstanding! 🌟";
+            } else if (score >= 7) {
+                message = "Great job! 🎉";
+            } else if (score >= 4) {
+                message = "Not bad! Keep practicing. 👍";
+            } else {
+                message = "Better luck next time! 💪";
+            }
+            document.getElementById("score").textContent = message;
+        }
+
+        fetchQuestions();
+    </script>
+</body>
+</html>
